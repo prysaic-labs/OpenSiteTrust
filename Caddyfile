@@ -1,0 +1,18 @@
+# Redirect www to apex
+www.opensitetrust.com {
+  redir https://opensitetrust.com{uri}
+}
+
+opensitetrust.com {
+  encode zstd gzip
+  header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  @api path /v1/*
+  handle @api {
+    reverse_proxy api:8000
+  }
+
+  handle {
+    reverse_proxy web:3000
+  }
+}

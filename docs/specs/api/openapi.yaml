@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: OpenSiteTrust API
+  version: v0.02
+servers:
+  - url: https://api.opensitetrust.com/v1
+paths:
+  /sites/{host}:
+    get:
+      summary: Get latest score for a host
+      parameters:
+        - name: host
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteScore'
+        '404': { description: Not found }
+  /sites/{host}/explain:
+    get:
+      summary: Get explanations (signals and contributions)
+      parameters:
+        - name: host
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Explanation'
+  /votes:
+    post:
+      summary: Submit a vote for a host
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '200': { description: OK }
+        '401': { description: Unauthorized }
+        '429': { description: Too Many Requests }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SiteScore:
+      type: object
+      properties:
+        host: { type: string }
+        score: { type: number, format: float }
+        level: { type: string, enum: [green, amber, red] }
+        breakdown:
+          type: object
+          properties:
+            S: { type: number }
+            C: { type: number }
+            T: { type: number }
+            U: { type: number }
+        updated_at: { type: string, format: date-time }
+    Explanation:
+      type: object
+      properties:
+        host: { type: string }
+        model_version: { type: string }
+        signals:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { type: string }
+              value: {}
+              effect: { type: string }
+    VoteRequest:
+      type: object
+      required: [host, label]
+      properties:
+        host: { type: string }
+        label: { type: string, enum: [safe, suspicious, danger] }
+        reason: { type: string }
